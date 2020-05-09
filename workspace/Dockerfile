@@ -58,6 +58,7 @@ RUN if [ ${CHANGE_SOURCE} = true ]; then \
 
 # always run apt update when start and after add new source list, then clean up at end.
 RUN set -xe; \
+    find /etc/apt/sources.list.d/ -type f -name "*.list" -exec sed -i.bak -r 's#deb(-src)?\s*http(s)?://ppa.launchpad.net#deb\1 https://launchpad.proxy.ustclug.org#ig' {} \; && \
     apt-get update -yqq && \
     pecl channel-update pecl.php.net && \
     groupadd -g ${PGID} laradock && \
@@ -523,15 +524,24 @@ RUN if [ ${INSTALL_PHPREDIS} = true ]; then \
 
 ARG INSTALL_SWOOLE=false
 
+ARG SWOOLE_INSTALL_VERSION_1=2.0.10
+ARG SWOOLE_INSTALL_VERSION_2=2.2.0
+ARG SWOOLE_INSTALL_VERSION_3=4.4.18
+
+COPY swoole-${SWOOLE_INSTALL_VERSION_1}.tgz /tmp/swoole-${SWOOLE_INSTALL_VERSION_1}.tgz
+COPY swoole-${SWOOLE_INSTALL_VERSION_2}.tgz /tmp/swoole-${SWOOLE_INSTALL_VERSION_2}.tgz
+# 替换成当前最新版本
+COPY swoole-${SWOOLE_INSTALL_VERSION_3}.tgz /tmp/swoole-${SWOOLE_INSTALL_VERSION_3}.tgz
+
 RUN if [ ${INSTALL_SWOOLE} = true ]; then \
     # Install Php Swoole Extension
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl -q install swoole-2.0.10; \
+      pecl -q install /tmp/swoole-${SWOOLE_INSTALL_VERSION_1}.tgz; \
     else \
       if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        pecl install swoole-2.2.0; \
+        pecl install /tmp/swoole-${SWOOLE_INSTALL_VERSION_2}.tgz; \
       else \
-        pecl install swoole; \
+        pecl install /tmp/swoole-${SWOOLE_INSTALL_VERSION_3}.tgz; \
       fi \
     fi && \
     echo "extension=swoole.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/swoole.ini && \
@@ -586,11 +596,13 @@ ARG INSTALL_AST=false
 ARG AST_VERSION=1.0.3
 ENV AST_VERSION ${AST_VERSION}
 
+COPY ast-${AST_VERSION}.tgz /tmp/ast-${AST_VERSION}.tgz
+
 RUN if [ ${INSTALL_AST} = true ]; then \
     # AST extension requires PHP 7.0.0 or newer
     if [ $(php -r "echo PHP_MAJOR_VERSION;") != "5" ]; then \
         # Install AST extension
-        printf "\n" | pecl -q install ast-${AST_VERSION} && \
+        printf "\n" | pecl -q install /tmp/ast-${AST_VERSION}.tgz && \
         echo "extension=ast.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/ast.ini && \
         phpenmod -v ${LARADOCK_PHP_VERSION} -s cli ast \
     ;fi \

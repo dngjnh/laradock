@@ -35,6 +35,7 @@ RUN if [ ${CHANGE_SOURCE} = true ]; then \
 
 # always run apt update when start and after add new source list, then clean up at end.
 RUN set -xe; \
+    find /etc/apt/sources.list.d/ -type f -name "*.list" -exec sed -i.bak -r 's#deb(-src)?\s*http(s)?://ppa.launchpad.net#deb\1 https://launchpad.proxy.ustclug.org#ig' {} \; && \
     apt-get update -yqq && \
     pecl channel-update pecl.php.net && \
     apt-get install -yqq \
@@ -254,12 +255,18 @@ RUN if [ ${INSTALL_XDEBUG} = false -a ${INSTALL_BLACKFIRE} = true ]; then \
 
 ARG INSTALL_PHPREDIS=false
 
+ARG REDIS_INSTALL_VERSION_1=4.3.0
+ARG REDIS_INSTALL_VERSION_2=5.2.1
+
+COPY redis-${REDIS_INSTALL_VERSION_1}.tgz /tmp/redis-${REDIS_INSTALL_VERSION_1}.tgz
+COPY redis-${REDIS_INSTALL_VERSION_2}.tgz /tmp/redis-${REDIS_INSTALL_VERSION_2}.tgz
+
 RUN if [ ${INSTALL_PHPREDIS} = true ]; then \
     # Install Php Redis Extension
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install -o -f redis-4.3.0; \
+      pecl install -o -f /tmp/redis-${REDIS_INSTALL_VERSION_1}.tgz; \
     else \
-      pecl install -o -f redis; \
+      pecl install -o -f /tmp/redis-${REDIS_INSTALL_VERSION_2}.tgz; \
     fi \
     && rm -rf /tmp/pear \
     && docker-php-ext-enable redis \
@@ -271,15 +278,24 @@ RUN if [ ${INSTALL_PHPREDIS} = true ]; then \
 
 ARG INSTALL_SWOOLE=false
 
+ARG SWOOLE_INSTALL_VERSION_1=2.0.10
+ARG SWOOLE_INSTALL_VERSION_2=2.2.0
+ARG SWOOLE_INSTALL_VERSION_3=4.4.18
+
+COPY swoole-${SWOOLE_INSTALL_VERSION_1}.tgz /tmp/swoole-${SWOOLE_INSTALL_VERSION_1}.tgz
+COPY swoole-${SWOOLE_INSTALL_VERSION_2}.tgz /tmp/swoole-${SWOOLE_INSTALL_VERSION_2}.tgz
+# 替换成当前最新版本
+COPY swoole-${SWOOLE_INSTALL_VERSION_3}.tgz /tmp/swoole-${SWOOLE_INSTALL_VERSION_3}.tgz
+
 RUN if [ ${INSTALL_SWOOLE} = true ]; then \
     # Install Php Swoole Extension
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install swoole-2.0.10; \
+      pecl install /tmp/swoole-${SWOOLE_INSTALL_VERSION_1}.tgz; \
     else \
       if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        pecl install swoole-2.2.0; \
+        pecl install /tmp/swoole-${SWOOLE_INSTALL_VERSION_2}.tgz; \
       else \
-        pecl install swoole; \
+        pecl install /tmp/swoole-${SWOOLE_INSTALL_VERSION_3}.tgz; \
       fi \
     fi && \
     docker-php-ext-enable swoole \
@@ -668,9 +684,13 @@ USER root
 
 ARG INSTALL_IMAGEMAGICK=false
 
+ARG IMAGICK_INSTALL_VERSION=3.4.4
+
+COPY imagick-${IMAGICK_INSTALL_VERSION}.tgz /tmp
+
 RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
     apt-get install -y libmagickwand-dev imagemagick && \
-    pecl install imagick && \
+    pecl install /tmp/imagick-${IMAGICK_INSTALL_VERSION}.tgz && \
     docker-php-ext-enable imagick \
 ;fi
 

@@ -35,7 +35,18 @@ RUN apk --update add wget \
   supervisor
 
 RUN docker-php-ext-install mysqli mbstring pdo pdo_mysql tokenizer xml pcntl
-RUN pecl channel-update pecl.php.net && pecl install memcached mcrypt-1.0.1 mongodb && docker-php-ext-enable memcached mongodb
+
+ARG MEMCACHED_INSTALL_VERSION=3.1.5
+ARG MCRYPT_INSTALL_VERSION=1.0.1
+ARG MONGODB_INSTALL_VERSION=1.7.4
+
+COPY memcached-${MEMCACHED_INSTALL_VERSION}.tgz /tmp/memcached-${MEMCACHED_INSTALL_VERSION}.tgz
+COPY mcrypt-${MCRYPT_INSTALL_VERSION}.tgz /tmp/mcrypt-${MCRYPT_INSTALL_VERSION}.tgz
+COPY mongodb-${MONGODB_INSTALL_VERSION}.tgz /tmp/mongodb-${MONGODB_INSTALL_VERSION}.tgz
+
+RUN pecl channel-update pecl.php.net \
+  && pecl install /tmp/memcached-${MEMCACHED_INSTALL_VERSION}.tgz /tmp/mcrypt-${MCRYPT_INSTALL_VERSION}.tgz /tmp/mongodb-${MONGODB_INSTALL_VERSION}.tgz \
+  && docker-php-ext-enable memcached mongodb
 
 # Add a non-root user:
 ARG PUID=1000
@@ -187,15 +198,24 @@ RUN if [ ${INSTALL_REDIS} = true ]; then \
 
 ARG INSTALL_SWOOLE=false
 
+ARG SWOOLE_INSTALL_VERSION_1=2.0.10
+ARG SWOOLE_INSTALL_VERSION_2=2.2.0
+ARG SWOOLE_INSTALL_VERSION_3=4.4.18
+
+COPY swoole-${SWOOLE_INSTALL_VERSION_1}.tgz /tmp/swoole-${SWOOLE_INSTALL_VERSION_1}.tgz
+COPY swoole-${SWOOLE_INSTALL_VERSION_2}.tgz /tmp/swoole-${SWOOLE_INSTALL_VERSION_2}.tgz
+# 替换成当前最新版本
+COPY swoole-${SWOOLE_INSTALL_VERSION_3}.tgz /tmp/swoole-${SWOOLE_INSTALL_VERSION_3}.tgz
+
 RUN if [ ${INSTALL_SWOOLE} = true ]; then \
     # Install Php Swoole Extension
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl -q install swoole-2.0.10; \
+      pecl -q install /tmp/swoole-${SWOOLE_INSTALL_VERSION_1}.tgz; \
     else \
       if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        pecl install swoole-2.2.0; \
+        pecl install /tmp/swoole-${SWOOLE_INSTALL_VERSION_2}.tgz; \
       else \
-        pecl install swoole; \
+        pecl install /tmp/swoole-${SWOOLE_INSTALL_VERSION_3}.tgz; \
       fi \
     fi \
     && docker-php-ext-enable swoole \
