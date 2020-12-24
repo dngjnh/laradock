@@ -1398,7 +1398,9 @@ COPY git-prompt.sh /tmp/git-prompt
 
 RUN if [ ${INSTALL_GIT_PROMPT} = true ]; then \
     git clone https://github.com/magicmonty/bash-git-prompt.git /root/.bash-git-prompt --depth=1 && \
+    git clone https://github.com/magicmonty/bash-git-prompt.git /home/laradock/.bash-git-prompt --depth=1 && \
     cat /tmp/git-prompt >> /root/.bashrc && \
+    cat /tmp/git-prompt >> /home/laradock/.bashrc && \
     rm /tmp/git-prompt \
 ;fi
 
