@@ -481,7 +481,7 @@ services:
         - frontend
         - backend
       extra_hosts:
-        - "host.docker.internal:host-gateway"  
+        - "host.docker.internal:host-gateway"
 
 ### OpenResty Server #########################################
     openresty:
@@ -598,6 +598,7 @@ services:
         - "${MYSQL_PORT}:3306"
       networks:
         - backend
+      platform: linux/arm64
 
 ### Percona ################################################
     percona:
@@ -2226,7 +2227,7 @@ services:
         - frontend
         - backend
       restart: always
-  
+
   ### keycloak ##################################################
     keycloak:
       image: bitnami/keycloak:${KEYCLOAK_VERSION}
