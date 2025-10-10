@@ -1079,6 +1079,8 @@ services:
         - "${REDIS_CLUSTER_PORT_RANGE}:7000-7005"
       networks:
         - backend
+      platform: linux/arm64
+
 ### SSDB ################################################
     ssdb:
       restart: always
