@@ -843,7 +843,6 @@ services:
         - "${MYSQL_PORT}:3306"
       networks:
         - backend
-      platform: linux/arm64
 
 ### Percona ################################################
     percona:
@@ -1075,11 +1074,14 @@ services:
     redis-cluster:
       restart: always
       build: ./redis-cluster
+      environment:
+        - IP=0.0.0.0
+        - INITIAL_PORT=7001
       ports:
-        - "${REDIS_CLUSTER_PORT_RANGE}:7000-7005"
+        - "${REDIS_CLUSTER_PORT_RANGE}:7001-7006"
       networks:
         - backend
-      platform: linux/arm64
+      platform: linux/amd64
 
 ### SSDB ################################################
     ssdb:
