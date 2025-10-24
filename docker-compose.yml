@@ -1074,8 +1074,10 @@ services:
     redis-cluster:
       restart: always
       build: ./redis-cluster
+      volumes:
+        - ./redis-cluster/redis-cluster.tmpl:/redis-conf/redis-cluster.tmpl
       environment:
-        - IP=0.0.0.0
+        - IP=redis-cluster
         - INITIAL_PORT=7001
       ports:
         - "${REDIS_CLUSTER_PORT_RANGE}:7001-7006"

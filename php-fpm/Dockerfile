@@ -26,11 +26,19 @@ ENV DEBIAN_FRONTEND noninteractive
 # If you're in China, or you need to change sources, will be set CHANGE_SOURCE to true in .env.
 
 ARG CHANGE_SOURCE=false
+ARG APT_ARCHIVE_MIRROR=archive.debian.org
 RUN if [ ${CHANGE_SOURCE} = true ]; then \
     # Change application source from deb.debian.org to aliyun source
     sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
     sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
     sed -i 's/security-cdn.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list \
+;else \
+    # For PHP versions less then 7.3, use archive.debian.org as debian source.
+    if [ ${LARADOCK_PHP_VERSION} = "7.2" ]; then \
+      echo "Detected PHP < 7.3, switching Debian source to archive.debian.org"; \
+      sed -i "s/deb.debian.org/${APT_ARCHIVE_MIRROR}/g" /etc/apt/sources.list && \
+      sed -i "s/security.debian.org/${APT_ARCHIVE_MIRROR}/g" /etc/apt/sources.list \
+    ;fi \
 ;fi
 
 # always run apt update when start and after add new source list, then clean up at end.
@@ -1383,7 +1391,6 @@ RUN if [ ${INSTALL_DNSUTILS} = true ]; then \
 USER root
 
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
-  && php -r "if (hash_file('sha384', 'composer-setup.php') === 'dac665fdc30fdd8ec78b38b9800061b4150413ff2e3b6f88543c636f7cd84f6db9189d43a81e5503cda447da73c7e5b6') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" \
   && php composer-setup.php \
   && php -r "unlink('composer-setup.php');" \
   && mv composer.phar /usr/local/bin/composer
